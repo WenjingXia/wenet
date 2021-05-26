@@ -28,6 +28,7 @@ from torch.utils.data import DataLoader
 
 from wenet.dataset.dataset import AudioDataset, CollateFunc
 from wenet.transformer.asr_model import init_asr_model
+from wenet.transformer.loss import Loss
 from wenet.utils.checkpoint import load_checkpoint, save_checkpoint
 from wenet.utils.executor import Executor
 from wenet.utils.scheduler import WarmupLR
@@ -172,7 +173,6 @@ if __name__ == '__main__':
     # the code to satisfy the script export requirements
     script_model = torch.jit.script(model)
     script_model.save(os.path.join(args.model_dir, 'init.zip'))
-    executor = Executor()
     # If specify checkpoint, load some info from checkpoint
     if args.checkpoint is not None:
         infos = load_checkpoint(model, args.checkpoint)
@@ -202,6 +202,8 @@ if __name__ == '__main__':
         device = torch.device('cuda' if use_cuda else 'cpu')
         model = model.to(device)
 
+    criterion = Loss(vocab_size=vocab_size, device=device, **configs['loss_conf'])
+    executor = Executor(model, criterion, device, configs)
     optimizer = optim.Adam(model.parameters(), **configs['optim_conf'])
     scheduler = WarmupLR(optimizer, **configs['scheduler_conf'])
     final_epoch = None
@@ -224,10 +226,9 @@ if __name__ == '__main__':
             train_sampler.set_epoch(epoch)
         lr = optimizer.param_groups[0]['lr']
         logging.info('Epoch {} TRAIN info lr {}'.format(epoch, lr))
-        executor.train(model, optimizer, scheduler, train_data_loader, device,
-                       writer, configs, scaler)
-        total_loss, num_seen_utts = executor.cv(model, cv_data_loader, device,
-                                                configs)
+        executor.train(optimizer, scheduler, train_data_loader,
+                       writer, scaler)
+        total_loss, num_seen_utts = executor.cv(cv_data_loader)
         if args.world_size > 1:
             # all_reduce expected a sequence parameter, so we use [num_seen_utts].
             num_seen_utts = torch.Tensor([num_seen_utts]).to(device)

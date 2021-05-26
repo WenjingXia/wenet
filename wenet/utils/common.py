@@ -84,6 +84,28 @@ def add_sos_eos(ys_pad: torch.Tensor, sos: int, eos: int,
     return pad_list(ys_in, eos), pad_list(ys_out, ignore_id)
 
 
+def add_sos(ys_pad: torch.Tensor, sos: int, eos: int,
+            ignore_id: int) -> torch.Tensor:
+    _sos = torch.tensor([sos],
+                        dtype=torch.long,
+                        requires_grad=False,
+                        device=ys_pad.device)
+    ys = [y[y != ignore_id] for y in ys_pad]  # parse padded ys
+    ys_in = [torch.cat([_sos, y], dim=0) for y in ys]
+    return pad_list(ys_in, eos)
+
+
+def add_eos(ys_pad: torch.Tensor, eos: int,
+                ignore_id: int) -> torch.Tensor:
+    _eos = torch.tensor([eos],
+                        dtype=torch.long,
+                        requires_grad=False,
+                        device=ys_pad.device)
+    ys = [y[y != ignore_id] for y in ys_pad]  # parse padded ys
+    ys_out = [torch.cat([y, _eos], dim=0) for y in ys]
+    return pad_list(ys_out, ignore_id)
+
+
 def th_accuracy(pad_outputs: torch.Tensor, pad_targets: torch.Tensor,
                 ignore_label: int) -> float:
     """Calculate accuracy.
