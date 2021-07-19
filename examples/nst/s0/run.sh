@@ -181,7 +181,7 @@ fi
 
 if [ ${stage} -le 5 ] && [ ${stop_stage} -ge 5 ]; then
     num_gpus=$(echo $CUDA_VISIBLE_DEVICES | awk -F "," '{print NF}')
-    for cutoff in 1.0 0.5 0.0 -1.0 -99999999.0; do
+    for cutoff in 1.0 0.5 0.0 -1.0 -99999999.0 -99999999.0; do
     if [ ${average_checkpoint} == true ]; then
         decode_checkpoint=$dir/avg_${average_num}.pt
         if [ $(echo "$cutoff < 1"|bc) = 1 ]; then

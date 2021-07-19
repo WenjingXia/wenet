@@ -206,23 +206,6 @@ if __name__ == '__main__':
         device = torch.device('cuda' if use_cuda else 'cpu')
         model = model.to(device)
 
-#    if args.tuning:
-#        lr = configs['optim_conf']['lr']
-#        params = [{
-#            'params': [
-#                param for name, param in model.named_parameters()
-#                if name.startswith("ctc") or name.startswith("decoder.output_layer")
-#            ]
-#        }, {
-#            'params': [
-#                param for name, param in model.named_parameters()
-#                if not (name.startswith("ctc") or name.startswith("decoder.output_layer"))
-#            ],
-#            'lr': lr * 0.1
-#        }]
-#        optimizer = optim.Adam(params, **configs['optim_conf'])
-#    else:
-#        optimizer = optim.Adam(model.parameters(), **configs['optim_conf'])
     optimizer = optim.Adam(model.parameters(), **configs['optim_conf'])
     scheduler = WarmupLR(optimizer, **configs['scheduler_conf'])
     final_epoch = None
